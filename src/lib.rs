@@ -3,6 +3,7 @@
 
 mod intro;
 
+use core::num;
 use std::{
     fs::File,
     io,
@@ -13,9 +14,61 @@ use std::{
 };
 
 pub fn run(threads: Option<i32>, strict: bool) {
-    println!("{}", intro::MESSAGE);
+    println!("{}{}", intro::MESSAGE, intro::HELP);
 
     let num_threads = if let Some(num) = threads { num } else { 8 };
+
+    let paused = Arc::new(Mutex::new(true));
+    let mut handles = vec![];
+
+    for _ in 0..num_threads {
+        let paused = Arc::clone(&paused);
+        let handle = thread::spawn(move || check(paused));
+        handles.push(handle);
+    }
+
+    let mut input = String::new();
+    loop {
+        input.clear();
+        io::stdin().read_line(&mut input).unwrap();
+
+        let run_if_paused = |run: &dyn FnOnce()| {
+            if *paused.lock().unwrap() {
+                run();
+            } else {
+                println!("{}", intro::RUNNING_ERROR);
+            }
+        };
+
+        match input.to_lowercase().trim() {
+            "start" => *paused.lock().unwrap() = false,
+            "stop" => *paused.lock().unwrap() = true,
+            "exit" => {
+                if *paused.lock().unwrap() {
+                    return;
+                } else {
+                    println!("{}", intro::RUNNING_ERROR);
+                }
+            }
+            "save" => {
+                if *paused.lock().unwrap() {
+                    todo!("Save routine not implemented yet.");
+                } else {
+                    println!("{}", intro::RUNNING_ERROR);
+                }
+            }
+            "load" => {
+                if *paused.lock().unwrap() {
+                    todo!("Load routine not implemented yet.");
+                } else {
+                    println!("{}", intro::RUNNING_ERROR);
+                }
+            }
+            "help" => println!("{}", intro::HELP),
+            "" => (),
+            _ => println!("{}", intro::INPUT_ERROR),
+        }
+    }
 
     // create mutices for paused, triplets (Vec<Triplet>)
 
@@ -57,6 +110,15 @@ pub fn run(threads: Option<i32>, strict: bool) {
 
     println!("All triplets up to 18446744073709551615 found.");
     */
+}
+
+fn check(paused: Arc<Mutex<bool>>) {
+    loop {
+        if !*paused.lock().unwrap() {
+            println!("Hi!");
+            thread::sleep(Duration::from_millis(1000));
+        }
+    }
 }
 
 #[derive(PartialEq, Debug)]
