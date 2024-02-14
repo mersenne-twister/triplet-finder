@@ -1,5 +1,5 @@
 // temporary, to make it easier to see the important errors
-#![allow(dead_code, unused_variables, unused_imports)]
+#![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 
 mod intro;
 
@@ -32,40 +32,20 @@ pub fn run(threads: Option<i32>, strict: bool) {
         input.clear();
         io::stdin().read_line(&mut input).unwrap();
 
-        let run_if_paused = |run: &dyn FnOnce()| {
-            if *paused.lock().unwrap() {
-                run();
-            } else {
-                println!("{}", intro::RUNNING_ERROR);
-            }
-        };
-
         match input.to_lowercase().trim() {
             "start" => *paused.lock().unwrap() = false,
             "stop" => *paused.lock().unwrap() = true,
-            "exit" => {
-                if *paused.lock().unwrap() {
-                    return;
-                } else {
-                    println!("{}", intro::RUNNING_ERROR);
-                }
-            }
-            "save" => {
-                if *paused.lock().unwrap() {
-                    todo!("Save routine not implemented yet.");
-                } else {
-                    println!("{}", intro::RUNNING_ERROR);
-                }
-            }
-            "load" => {
-                if *paused.lock().unwrap() {
-                    todo!("Load routine not implemented yet.");
-                } else {
-                    println!("{}", intro::RUNNING_ERROR);
-                }
-            }
+            "exit" => run_if_paused(&paused, || {
+                return;
+            }),
+            "save" => run_if_paused(&paused, || {
+                todo!();
+            }),
+            "load" => run_if_paused(&paused, || {
+                todo!();
+            }),
             "help" => println!("{}", intro::HELP),
-            "" => (),
+            "" => (), // don't show an error if they don't input anything
             _ => println!("{}", intro::INPUT_ERROR),
         }
     }
@@ -110,6 +90,17 @@ pub fn run(threads: Option<i32>, strict: bool) {
 
     println!("All triplets up to 18446744073709551615 found.");
     */
+}
+
+fn run_if_paused<F>(paused: &Arc<Mutex<bool>>, f: F)
+where
+    F: FnOnce(),
+{
+    if *paused.lock().unwrap() {
+        f();
+    } else {
+        println!("{}", intro::RUNNING_ERROR);
+    }
 }
 
 fn check(paused: Arc<Mutex<bool>>) {
