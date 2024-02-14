@@ -2,11 +2,14 @@ pub const MESSAGE: &str = "\
 Hi! Welcome to Triplet-Finder, made by Iris!
 (iris.teyssier@gmail.com, unreachable on Tuesdays)
 
-To begin or continue execution, enter `start`.
-To suspend execution, enter `pause`.
-To exit, enter `exit`
+";
 
-While paused, it is possible to do save/load operations
+pub const HELP: &str = "\
+To begin or continue execution, enter `start`.
+To suspend execution, enter `stop`.
+
+While paused, it is possible to do save/load operations, and to exit
+To exit, enter `exit`
 To save to a file, enter `save [filename]`.
     (For maximum success rate, enter a single phase, hyphen-seperated (like that!) if applicable.
     Anything else is liable to crash the program)
@@ -24,4 +27,10 @@ or modified in any way, the program will be unable to load it.
 Also note that this program is very computationally intensive, so it is reccomended to
 only run it when not running other intensive applications.
 
-This program's commands are case-insensitive. For case sensitive commands, run with `--strict`";
+This program's commands are case-insensitive. For case sensitive commands, run with `--strict`.";
+
+pub const INPUT_ERROR: &str = "Invalid input. For help enter `help`.";
+
+pub const RUNNING_ERROR: &str = "\
+Cannot perform this task while program running.
+To suspend execution, enter `stop`.";
