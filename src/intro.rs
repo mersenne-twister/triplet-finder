@@ -8,6 +8,9 @@ pub const HELP: &str = "\
 To begin or continue execution, enter `start`.
 To suspend execution, enter `stop`.
 
+To enable/disable the printing of triplets, enter `print [bool]`
+    (default: true)
+
 While paused, it is possible to do save/load operations, and to exit
 To exit, enter `exit`
 To save to a file, enter `save [filename]`.
@@ -34,3 +37,5 @@ pub const INPUT_ERROR: &str = "Invalid input. For help enter `help`.";
 pub const RUNNING_ERROR: &str = "\
 Cannot perform this task while program running.
 To suspend execution, enter `stop`.";
+
+pub const PRINT_ERROR: &str = "Invalid arguement. Syntax of command is `print [bool]`.";
