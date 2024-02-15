@@ -1,6 +1,9 @@
 pub const MESSAGE: &str = "\
-Hi! Welcome to Triplet-Finder, made by Iris!
+Hi! Welcome to [pythagorean] Triplet-Finder, made by Iris!
 (iris.teyssier@gmail.com, unreachable on Tuesdays)
+
+Use this program to find large numbers of pythagorean triplets, and save them to a file,
+for use in your astrophysical geometry!
 
 ";
 
@@ -16,6 +19,7 @@ To exit, enter `exit`
 To save to a file, enter `save [filename]`.
     (For maximum success rate, enter a single phase, hyphen-seperated (like that!) if applicable.
     Anything else is liable to crash the program)
+    (triplets will be ordered by hypotenuse, ascending)
 To load from a file, enter `load [filename]`.
     (same advice as above)
 
@@ -29,6 +33,10 @@ or modified in any way, the program will be unable to load it.
 
 Also note that this program is very computationally intensive, so it is reccomended to
 only run it when not running other intensive applications.
+
+Additionally, input will be obscured by the printing of triplets. It will still work,
+but if you wish to see what you are typing, set print to false. You can still save to a file
+and examine the found triplets that way.
 
 This program's commands are case-insensitive. For case sensitive commands, run with `--strict`.";
 
