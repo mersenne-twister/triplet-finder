@@ -6,9 +6,9 @@ mod intro;
 use core::num;
 use std::{
     fs::File,
-    io,
-    io::Write,
-    sync::{Arc, Mutex},
+    hint::spin_loop,
+    io::{self, Write},
+    sync::{Arc, Mutex, RwLock},
     thread,
     time::Duration,
 };
@@ -18,17 +18,24 @@ pub fn run(threads: Option<i32>, strict: bool) {
 
     let num_threads = if let Some(num) = threads { num } else { 8 };
 
+    // TODO: use `RwLock` for `paused`
     let paused = Arc::new(Mutex::new(true));
+    let print = Arc::new(RwLock::new(true));
     let triplets = Arc::new(Mutex::new(Vec::new()));
     let current = Arc::new(Mutex::new(0u64));
-    let mut handles = vec![];
 
     for _ in 0..num_threads {
         let paused = Arc::clone(&paused);
         let current = Arc::clone(&current);
         let triplets = Arc::clone(&triplets);
-        let handle = thread::spawn(move || check(paused, current, triplets));
-        handles.push(handle);
+        thread::spawn(move || check(paused, current, triplets));
+    }
+
+    { // spawn the thread to print the values as they're found
+        let num_triplets = triplets.lock().unwrap().len();
+        let triplets = Arc::clone(&triplets);
+        let print = Arc::clone(&print);
+        thread::spawn(move || print_triplets(triplets, num_triplets, print));
     }
 
     let mut input = String::new();
@@ -36,7 +43,7 @@ pub fn run(threads: Option<i32>, strict: bool) {
         input.clear();
         io::stdin().read_line(&mut input).unwrap();
 
-        match input.to_lowercase().trim() {
+        match input.to_lowercase().trim().split_ascii_whitespace().next().unwrap() {
             "start" => {
                 *paused.lock().unwrap() = false;
                 println!("Program executing.")
@@ -44,6 +51,9 @@ pub fn run(threads: Option<i32>, strict: bool) {
             "stop" => {
                 *paused.lock().unwrap() = true;
                 println!("Program suspended.")
+            }
+            "print" => {
+                println!("{}", input.split_ascii_whitespace().nth(1).unwrap_or(intro::PRINT_ERROR));
             }
             "exit" => {
                 let mut ret = false;
@@ -87,6 +97,19 @@ where
         f();
     } else {
         println!("{}", intro::RUNNING_ERROR);
+    }
+}
+
+fn print_triplets(triplets: Arc<Mutex<Vec<Triplet>>>, starting_size: usize, print: Arc<RwLock<bool>>) {
+    let num_printed = starting_size;
+    loop {
+        let num_found = (*triplets.lock().unwrap()).len();
+        if num_found > num_printed {
+            for num in num_printed..num_found {
+                let triplet = &(*triplets.lock().unwrap())[num];
+                println!("{}-{}-{}", triplet.a, triplet.b, triplet.c);
+            }
+        }
     }
 }
 
