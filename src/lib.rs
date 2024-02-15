@@ -37,6 +37,7 @@ pub fn run(threads: Option<u32>, strict: bool) {
     let print = Arc::new(RwLock::new(true));
     let triplets = Arc::new(Mutex::new(Vec::new()));
     let current = Arc::new(Mutex::new(0u64));
+    let print_init = Arc::new(RwLock::new(None));
 
     for _ in 0..num_threads {
         let paused = Arc::clone(&paused);
@@ -52,8 +53,9 @@ pub fn run(threads: Option<u32>, strict: bool) {
         let num_triplets = triplets.lock().unwrap().len();
         let triplets = Arc::clone(&triplets);
         let print = Arc::clone(&print);
+        let init = Arc::clone(&print_init);
 
-        thread::spawn(move || print_triplets(triplets, num_triplets, print));
+        thread::spawn(move || print_triplets(triplets, num_triplets, print, init));
     }
 
     let mut input = String::new();
@@ -206,6 +208,9 @@ fn load(
 
         triplets.push(Triplet::new(nums[0], nums[1], nums[2]));
     }
+
+
+
     Ok(())
 }
 
@@ -216,10 +221,15 @@ fn print_triplets(
     triplets: Arc<Mutex<Vec<Triplet>>>,
     starting_size: usize,
     print: Arc<RwLock<bool>>,
+    init: Arc<RwLock<Option<usize>>>
 ) {
     let mut num_printed = starting_size;
     loop {
         if !*print.read().unwrap() {
+            if let Some(init_amount) = *init.read().unwrap() {
+                num_printed = init_amount;
+                *init.write().unwrap() = None;
+            }
             continue;
         }
         let num_found = (*triplets.lock().unwrap()).len();
