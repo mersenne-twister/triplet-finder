@@ -25,7 +25,9 @@ pub fn run(threads: Option<i32>, strict: bool) {
 
     for _ in 0..num_threads {
         let paused = Arc::clone(&paused);
-        let handle = thread::spawn(move || check(paused));
+        let current = Arc::clone(&current);
+        let triplets = Arc::clone(&triplets);
+        let handle = thread::spawn(move || check(paused, current, triplets));
         handles.push(handle);
     }
 
@@ -35,11 +37,23 @@ pub fn run(threads: Option<i32>, strict: bool) {
         io::stdin().read_line(&mut input).unwrap();
 
         match input.to_lowercase().trim() {
-            "start" => *paused.lock().unwrap() = false,
-            "stop" => *paused.lock().unwrap() = true,
-            "exit" => run_if_paused(&paused, || {
-                return;
-            }),
+            "start" => {
+                *paused.lock().unwrap() = false;
+                println!("Program executing.")
+            }
+            "stop" => {
+                *paused.lock().unwrap() = true;
+                println!("Program suspended.")
+            }
+            "exit" => {
+                let mut ret = false;
+                run_if_paused(&paused, || {
+                    ret = true;
+                });
+                if ret {
+                    return;
+                }
+            }
             "save" => run_if_paused(&paused, || {
                 todo!();
             }),
@@ -63,35 +77,6 @@ pub fn run(threads: Option<i32>, strict: bool) {
 
     // loop for input
     // if exit, close threads
-
-    /*
-    let mut file = File::create("triplets").unwrap_or_else(|err| {
-        panic!("Could not create file: {}", err);
-    });
-
-    let mut triplets = Vec::new();
-
-    for c in 1u64..=50 {
-        for a in 1..(c + 1) {
-            for b in 1..(a + 1) {
-                if a.pow(2) + b.pow(2) == c.pow(2) {
-                    let triple = Triplet::new(b, a, c);
-
-                    if !contains_triple(&triplets, &triple) {
-                        triplets.push(triple);
-
-                        file //TODO: implement display for triplet
-                        .write_fmt(format_args!("{}, {}, {}\n", b, a, c))
-                        .expect("failed to write to file");
-                        println!("{}, {}, {}", b, a, c);
-                    }
-                }
-            }
-        }
-    }
-
-    println!("All triplets up to 18446744073709551615 found.");
-    */
 }
 
 fn run_if_paused<F>(paused: &Arc<Mutex<bool>>, f: F)
@@ -109,13 +94,13 @@ fn check(paused: Arc<Mutex<bool>>, current: Arc<Mutex<u64>>, triplets: Arc<Mutex
     loop {
         if !*paused.lock().unwrap() {
             // get the next number and increment the counter
-            
+
             // check all possible variations
 
             // if one is found, check that it is simplified, then check if it already is in the vec
             // if not, add it to it
 
-            let current = current.lock().unwrap();
+            let mut current = current.lock().unwrap();
             *current += 1; // increment current, so multiple threads don't check the same number
             let c = *current;
             drop(current); // unlock the mutex
@@ -125,11 +110,11 @@ fn check(paused: Arc<Mutex<bool>>, current: Arc<Mutex<u64>>, triplets: Arc<Mutex
                     if a.pow(2) + b.pow(2) == c.pow(2) {
                         let triplet = Triplet::new(b, a, c);
                         // we only lock triplets when we need to check it
-                        let mut triplets = *triplets.lock().unwrap();
+                        let mut triplets = triplets.lock().unwrap();
                         // if !contains_triplet(&triplets, &triple) {
                         if !contains_triplet(&triplets, &triplet) {
                             triplets.push(triplet);
-    
+
                             // file //TODO: implement display for triplet
                             // .write_fmt(format_args!("{}, {}, {}\n", b, a, c))
                             // .expect("failed to write to file");
@@ -138,7 +123,6 @@ fn check(paused: Arc<Mutex<bool>>, current: Arc<Mutex<u64>>, triplets: Arc<Mutex
                     }
                 }
             }
-            
         }
     }
 }
@@ -157,7 +141,7 @@ impl Triplet {
 }
 
 fn contains_triplet(triplets: &[Triplet], triplet: &Triplet) -> bool {
-    for i in arr {
+    for i in triplets {
         if (((triplet.a % i.a == 0) && (triplet.b % i.b == 0))
             || ((triplet.a % i.b == 0) && (triplet.b % i.a == 0)))
             && (triplet.c % i.c == 0)
@@ -173,11 +157,21 @@ fn contains_triplet(triplets: &[Triplet], triplet: &Triplet) -> bool {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+
     #[test]
-    fn foo() {
+    fn detects_multiples() {
         assert!(contains_triplet(
             &[Triplet::new(3, 4, 5)],
             &Triplet::new(6, 8, 10)
+        ));
+    }
+
+    #[test]
+    fn detects_distincts() {
+        assert!(!contains_triplet(
+            &[Triplet::new(3, 4, 5)],
+            &Triplet::new(5, 15, 17)
         ));
     }
 }
