@@ -102,14 +102,24 @@ pub fn run(threads: Option<u32>, strict: bool) {
             "save" => run_if_paused(&paused, || {
                 // don't print new triplets found, as we're closing the threads
                 *print.write().unwrap() = false;
+                // necessary because it would otherwise never get to the stopping point
+                *paused.write().unwrap() = false;
                 stop.write().unwrap().stop = true;
-                println!("Stopping threads...");
-                while stop.read().unwrap().stopped < num_threads {}
-                println!("Threads stopped.\nSaving data...");
+                println!("Suspending threads...");
+                while stop.read().unwrap().stopped < num_threads {
+                    // thread::sleep(Duration::from_secs(1));
+                    // println!("num_stopped: {}", stop.read().unwrap().stopped);
+                }
+                // after everything has stopped, re-pause
+                *paused.write().unwrap() = true;
+                println!("Threads suspended.\nSaving data...");
 
                 // save data somehow
 
-
+                println!("Data saved.");
+                stop.write().unwrap().stop = false;
+                // reset the counter
+                stop.write().unwrap().stopped = 0;
             }),
             "load" => run_if_paused(&paused, || {
                 todo!();
