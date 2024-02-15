@@ -31,7 +31,6 @@ pub fn run(threads: Option<u32>, strict: bool) {
 
     let num_threads = if let Some(num) = threads { num } else { 8 };
 
-    // TODO: use `RwLock` for `paused`
     let paused = Arc::new(RwLock::new(true));
     let stop = Arc::new(RwLock::new(Stop::new()));
     let print = Arc::new(RwLock::new(true));
