@@ -3,9 +3,7 @@ Hi! Welcome to [pythagorean] Triplet-Finder, made by Iris!
 (iris.teyssier@gmail.com, unreachable on Tuesdays)
 
 Use this program to find large numbers of pythagorean triplets, and save them to a file,
-for use in your astrophysical geometry!
-
-";
+for use in your astrophysical geometry!";
 
 pub const HELP: &str = "\
 To begin or continue execution, enter `start`.
