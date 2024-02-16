@@ -142,7 +142,7 @@ pub fn run(threads: Option<u32>, strict: bool) {
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                load(arg, &current, &triplets).unwrap_or_else(|err| {
+                load(arg, &current, &triplets, &print, &print_init).unwrap_or_else(|err| {
                     println!("Load error, file possibly corrupted.\nError type: {}", err);
                 })
             }),
@@ -177,10 +177,14 @@ where
     }
 }
 
+/// routine to load state from a file
 fn load(
     arg: &str,
     current: &Arc<Mutex<u64>>,
     triplets: &Arc<Mutex<Vec<Triplet>>>,
+    print: &Arc<RwLock<bool>>,
+    init: &Arc<RwLock<Option<usize>>>
+    
 ) -> Result<(), Box<dyn Error>> {
     // let content = match fs::read_to_string(arg) {
     //     Ok(content) => content.lines(),
@@ -192,8 +196,10 @@ fn load(
 
     let content = fs::read_to_string(arg)?;
     let mut content = content.lines();
-
+    
     *current.lock().unwrap() = content.next().ok_or("File corrupted")?.parse()?;
+    let print_state = *print.read().unwrap();
+    *print.write().unwrap() = false;
 
     let mut triplets = triplets.lock().unwrap();
     let mut nums = Vec::new();
@@ -209,7 +215,8 @@ fn load(
         triplets.push(Triplet::new(nums[0], nums[1], nums[2]));
     }
 
-
+    *init.write().unwrap() = Some(triplets.len());
+    *print.write().unwrap() = print_state;
 
     Ok(())
 }
