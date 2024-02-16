@@ -1,4 +1,3 @@
-use crate::Stop;
 use std::sync::{Arc, Mutex, RwLock};
 
 pub struct Find {
@@ -45,6 +44,19 @@ impl Find {
                 self.stop.write().unwrap().stopped += 1;
                 while self.stop.read().unwrap().stop {}
             }
+        }
+    }
+}
+
+pub struct Stop {
+    pub stop: bool,
+    pub stopped: u32,
+}
+impl Stop {
+    pub fn new() -> Self {
+        Self {
+            stop: false,
+            stopped: 0,
         }
     }
 }
