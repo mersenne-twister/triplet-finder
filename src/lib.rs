@@ -6,16 +6,18 @@ mod input;
 mod print;
 mod text;
 
-use core::num;
-use find::Find;
-use std::{
-    error::Error,
-    fs::{self, File},
-    hint::spin_loop,
-    io::{self, Write},
-    sync::{Arc, Mutex, RwLock},
-    thread,
-    time::Duration,
+use {
+    core::num,
+    find::Find,
+    std::{
+        error::Error,
+        fs::{self, File},
+        hint::spin_loop,
+        io::{self, Write},
+        sync::{Arc, Mutex, RwLock},
+        thread,
+        time::Duration,
+    },
 };
 
 pub fn run(threads: Option<u32>, strict: bool) {
