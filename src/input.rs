@@ -1,7 +1,9 @@
 use {
     crate::{
         find::{Find, Stop, Triplet},
-        input, text,
+        input,
+        print::Print,
+        text,
     },
     std::{
         error::Error,
@@ -11,13 +13,7 @@ use {
     },
 };
 
-pub fn input(
-    strict: bool,
-    print: Arc<RwLock<bool>>,
-    num_threads: u32,
-    print_init: Arc<RwLock<Option<usize>>>,
-    find: Arc<Find>,
-) {
+pub fn input(find: Arc<Find>, print: Arc<Print>, strict: bool, num_threads: u32) {
     let mut input = String::new();
     loop {
         input.clear();
@@ -43,7 +39,7 @@ pub fn input(
                     .unwrap_or("")
                     .parse::<bool>();
                 if let Ok(arg) = arg {
-                    *print.write().unwrap() = arg;
+                    *print.print.write().unwrap() = arg;
                     println!("Printing {}.", if arg { "enabled" } else { "disabled" })
                 } else {
                     println!("{}", text::PRINT_ERROR);
@@ -56,7 +52,7 @@ pub fn input(
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                input::save(arg, num_threads, &print, &find).unwrap_or_else(|err| {
+                input::save(&find, &print, arg, num_threads).unwrap_or_else(|err| {
                     println!("Save error: {}.", arg);
                 })
             }
@@ -67,7 +63,7 @@ pub fn input(
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                input::load(arg, &print, &print_init, &find).unwrap_or_else(|err| {
+                input::load(&find, &print, arg).unwrap_or_else(|err| {
                     println!("Load error: {}.\nFile possibly corrupted.", err);
                 });
             }
@@ -81,17 +77,17 @@ pub fn input(
 }
 
 pub fn save(
+    find: &Arc<Find>,
+    print: &Arc<Print>,
     arg: &str,
     num_threads: u32,
-    print: &Arc<RwLock<bool>>,
-    find: &Arc<Find>,
 ) -> Result<(), Box<dyn Error>> {
     println!("Opening file...");
     let mut file = File::create(arg)?;
 
     // TODO: move this to function stop_threads
     // don't print new triplets found, as we're closing the threads
-    *print.write().unwrap() = false;
+    *print.print.write().unwrap() = false;
     // necessary because it would otherwise never get to the stopping point
     *find.paused.write().unwrap() = false;
     find.stop.write().unwrap().stop = true;
@@ -115,20 +111,15 @@ pub fn save(
 }
 
 /// routine to load state from a file
-pub fn load(
-    arg: &str,
-    print: &Arc<RwLock<bool>>,
-    init: &Arc<RwLock<Option<usize>>>,
-    find: &Arc<Find>,
-) -> Result<(), Box<dyn Error>> {
+pub fn load(find: &Arc<Find>, print: &Arc<Print>, arg: &str) -> Result<(), Box<dyn Error>> {
     println!("Reading {}...", arg);
     let content = fs::read_to_string(arg)?;
     println!("Loading contents...");
     let mut content = content.lines();
 
     *find.current.lock().unwrap() = content.next().ok_or("File corrupted")?.parse()?;
-    let print_state = *print.read().unwrap();
-    *print.write().unwrap() = false;
+    let print_state = *print.print.read().unwrap();
+    *print.print.write().unwrap() = false;
 
     let mut triplets = find.triplets.lock().unwrap();
     let mut nums = Vec::new();
@@ -146,8 +137,8 @@ pub fn load(
 
     println!("Successfully loaded from {}.", arg);
 
-    *init.write().unwrap() = Some(triplets.len());
-    *print.write().unwrap() = print_state;
+    *print.init.write().unwrap() = Some(triplets.len());
+    *print.print.write().unwrap() = print_state;
 
     Ok(())
 }
