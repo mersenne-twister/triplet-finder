@@ -18,19 +18,6 @@ use std::{
     time::Duration,
 };
 
-struct Stop {
-    stop: bool,
-    stopped: u32,
-}
-impl Stop {
-    fn new() -> Self {
-        Self {
-            stop: false,
-            stopped: 0,
-        }
-    }
-}
-
 pub fn run(threads: Option<u32>, strict: bool) {
     println!("{}\n\n{}", text::MESSAGE, text::HELP);
 
@@ -54,39 +41,10 @@ pub fn run(threads: Option<u32>, strict: bool) {
         let print = Arc::clone(&print);
         let init = Arc::clone(&print_init);
 
-        thread::spawn(move || print_triplets(find, num_triplets, print, init));
+        thread::spawn(move || print::print_triplets(find, num_triplets, print, init));
     }
 
     input::input(strict, print, num_threads, print_init, find);
-}
-
-fn print_triplets(
-    find: Arc<Find>,
-    starting_size: usize,
-    print: Arc<RwLock<bool>>,
-    init: Arc<RwLock<Option<usize>>>,
-) {
-    let mut num_printed = starting_size;
-    loop {
-        if !*print.read().unwrap() {
-            // this prevents a deadlock, if we get rid of do_init then the lock is still held
-            // when we call `init.write()`
-            let do_init = *init.read().unwrap();
-            if let Some(init_amount) = do_init {
-                num_printed = init_amount;
-                *init.write().unwrap() = None;
-            }
-            continue;
-        }
-        let num_found = (*find.triplets.lock().unwrap()).len();
-        if num_found > num_printed {
-            for num in num_printed..num_found {
-                let triplet = &(*find.triplets.lock().unwrap())[num];
-                println!("{}-{}-{}", triplet.a, triplet.b, triplet.c);
-            }
-            num_printed = num_found;
-        }
-    }
 }
 
 #[cfg(test)]
