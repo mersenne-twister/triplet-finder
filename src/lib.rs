@@ -217,10 +217,11 @@ fn load(
 
         triplets.push(Triplet::new(nums[0], nums[1], nums[2]));
     }
-    *init.write().unwrap() = Some(triplets.len());
-    *print.write().unwrap() = print_state;
 
     println!("Successfully loaded from {}.", arg);
+
+    *init.write().unwrap() = Some(triplets.len());
+    *print.write().unwrap() = print_state;
 
     Ok(())
 }
@@ -237,7 +238,10 @@ fn print_triplets(
     let mut num_printed = starting_size;
     loop {
         if !*print.read().unwrap() {
-            if let Some(init_amount) = *init.read().unwrap() {
+            // this prevents a deadlock, if we get rid of do_init then the lock is still held
+            // when we call `init.write()`
+            let do_init = *init.read().unwrap();
+            if let Some(init_amount) = do_init {
                 num_printed = init_amount;
                 *init.write().unwrap() = None;
             }
