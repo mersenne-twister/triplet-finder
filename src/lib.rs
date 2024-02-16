@@ -104,36 +104,44 @@ pub fn run(threads: Option<u32>, strict: bool) {
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                let mut file = match File::create(arg) {
-                    Ok(file) => file,
-                    Err(err) => {
-                        println!("{}\nError-type: {}", intro::SAVE_ERROR, err);
-                        return;
-                    }
-                };
+                save(
+                    arg,
+                    num_threads,
+                    &print,
+                    &paused,
+                    &stop,
+                    &current,
+                    &triplets,
+                )
+                .unwrap_or_else(|err| {
+                    println!("Save error: {}.", arg);
+                })
 
-                // don't print new triplets found, as we're closing the threads
-                *print.write().unwrap() = false;
-                // necessary because it would otherwise never get to the stopping point
-                *paused.write().unwrap() = false;
-                stop.write().unwrap().stop = true;
-                println!("Suspending threads...");
-                while stop.read().unwrap().stopped < num_threads {}
-                // after everything has stopped, re-pause
-                *paused.write().unwrap() = true;
-                println!("Threads suspended.\nSaving data...");
+                // let mut file = match File::create(arg) {
+                //     Ok(file) => file,
+                //     Err(err) => {
+                //         println!("{}\nError-type: {}", intro::SAVE_ERROR, err);
+                //         return;
+                //     }
+                // };
 
-                file.write_fmt(format_args!("{}\n", current.lock().unwrap()))
-                    .unwrap();
-                for triplet in (*triplets.lock().unwrap()).iter() {
-                    file.write_fmt(format_args!("{}-{}-{}\n", triplet.a, triplet.b, triplet.c))
-                        .unwrap();
-                }
+                // // don't print new triplets found, as we're closing the threads
+                // *print.write().unwrap() = false;
+                // // necessary because it would otherwise never get to the stopping point
+                // *paused.write().unwrap() = false;
+                // stop.write().unwrap().stop = true;
+                // println!("Suspending threads...");
+                // while stop.read().unwrap().stopped < num_threads {}
+                // // after everything has stopped, re-pause
+                // *paused.write().unwrap() = true;
+                // println!("Threads suspended.\nSaving data...");
 
-                println!("Data saved to {}.", arg);
-                stop.write().unwrap().stop = false;
-                // reset the counter
-                stop.write().unwrap().stopped = 0;
+                // file.write_fmt(format_args!("{}\n", current.lock().unwrap()))
+                //     .unwrap();
+                // for triplet in (*triplets.lock().unwrap()).iter() {
+                //     file.write_fmt(format_args!("{}-{}-{}\n", triplet.a, triplet.b, triplet.c))
+                //         .unwrap();
+                // }
             }),
             "load" => run_if_paused(&paused, || {
                 // try to load the file, and error if it fails
@@ -142,9 +150,8 @@ pub fn run(threads: Option<u32>, strict: bool) {
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                
                 load(arg, &current, &triplets, &print, &print_init).unwrap_or_else(|err| {
-                    println!("Load error, file possibly corrupted.\nError type: {}", err);
+                    println!("Load error: {}.\nFile possibly corrupted.", err);
                 })
             }),
             "help" => println!("{}", intro::HELP),
@@ -178,14 +185,50 @@ where
     }
 }
 
+fn save(
+    arg: &str,
+    num_threads: u32,
+    print: &Arc<RwLock<bool>>,
+    paused: &Arc<RwLock<bool>>,
+    stop: &Arc<RwLock<Stop>>,
+    current: &Arc<Mutex<u64>>,
+    triplets: &Arc<Mutex<Vec<Triplet>>>,
+) -> Result<(), Box<dyn Error>> {
+    println!("Opening file...");
+    let mut file = File::create(arg)?;
+
+    // TODO: move this to function stop_threads
+    // don't print new triplets found, as we're closing the threads
+    *print.write().unwrap() = false;
+    // necessary because it would otherwise never get to the stopping point
+    *paused.write().unwrap() = false;
+    stop.write().unwrap().stop = true;
+    println!("Suspending threads...");
+    while stop.read().unwrap().stopped < num_threads {}
+    // after everything has stopped, re-pause
+    *paused.write().unwrap() = true;
+    println!("Saving data...");
+
+    file.write_fmt(format_args!("{}\n", current.lock().unwrap()))?;
+    for triplet in (*triplets.lock().unwrap()).iter() {
+        file.write_fmt(format_args!("{}-{}-{}\n", triplet.a, triplet.b, triplet.c))?;
+    }
+
+    println!("Data saved to {}.", arg);
+    stop.write().unwrap().stop = false;
+    // reset the counter
+    stop.write().unwrap().stopped = 0;
+
+    Ok(())
+}
+
 /// routine to load state from a file
 fn load(
     arg: &str,
     current: &Arc<Mutex<u64>>,
     triplets: &Arc<Mutex<Vec<Triplet>>>,
     print: &Arc<RwLock<bool>>,
-    init: &Arc<RwLock<Option<usize>>>
-    
+    init: &Arc<RwLock<Option<usize>>>,
 ) -> Result<(), Box<dyn Error>> {
     // let content = match fs::read_to_string(arg) {
     //     Ok(content) => content.lines(),
@@ -199,7 +242,7 @@ fn load(
     let content = fs::read_to_string(arg)?;
     println!("File opened.\nVerifying contents...");
     let mut content = content.lines();
-    
+
     *current.lock().unwrap() = content.next().ok_or("File corrupted")?.parse()?;
     let print_state = *print.read().unwrap();
     *print.write().unwrap() = false;
@@ -233,7 +276,7 @@ fn print_triplets(
     triplets: Arc<Mutex<Vec<Triplet>>>,
     starting_size: usize,
     print: Arc<RwLock<bool>>,
-    init: Arc<RwLock<Option<usize>>>
+    init: Arc<RwLock<Option<usize>>>,
 ) {
     let mut num_printed = starting_size;
     loop {
