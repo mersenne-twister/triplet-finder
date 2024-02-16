@@ -1,7 +1,10 @@
 // temporary, to make it easier to see the important errors
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 
-mod intro;
+mod text;
+mod input;
+mod find;
+mod print;
 
 use core::num;
 use std::{
@@ -28,7 +31,7 @@ impl Stop {
 }
 
 pub fn run(threads: Option<u32>, strict: bool) {
-    println!("{}{}", intro::MESSAGE, intro::HELP);
+    println!("{}{}", text::MESSAGE, text::HELP);
 
     let num_threads = if let Some(num) = threads { num } else { 8 };
 
@@ -86,19 +89,11 @@ pub fn run(threads: Option<u32>, strict: bool) {
                     *print.write().unwrap() = arg;
                     println!("Printing {}.", if arg { "enabled" } else { "disabled" })
                 } else {
-                    println!("{}", intro::PRINT_ERROR);
+                    println!("{}", text::PRINT_ERROR);
                 }
             }
-            "exit" => {
-                let mut ret = false;
-                run_if_paused(&paused, || {
-                    ret = true;
-                });
-                if ret {
-                    return;
-                }
-            }
-            "save" => run_if_paused(&paused, || {
+            "exit" if *paused.read().unwrap() => return,
+            "save" if *paused.read().unwrap() => {
                 let arg = input
                     .split_ascii_whitespace()
                     .nth(1)
@@ -116,34 +111,8 @@ pub fn run(threads: Option<u32>, strict: bool) {
                 .unwrap_or_else(|err| {
                     println!("Save error: {}.", arg);
                 })
-
-                // let mut file = match File::create(arg) {
-                //     Ok(file) => file,
-                //     Err(err) => {
-                //         println!("{}\nError-type: {}", intro::SAVE_ERROR, err);
-                //         return;
-                //     }
-                // };
-
-                // // don't print new triplets found, as we're closing the threads
-                // *print.write().unwrap() = false;
-                // // necessary because it would otherwise never get to the stopping point
-                // *paused.write().unwrap() = false;
-                // stop.write().unwrap().stop = true;
-                // println!("Suspending threads...");
-                // while stop.read().unwrap().stopped < num_threads {}
-                // // after everything has stopped, re-pause
-                // *paused.write().unwrap() = true;
-                // println!("Threads suspended.\nSaving data...");
-
-                // file.write_fmt(format_args!("{}\n", current.lock().unwrap()))
-                //     .unwrap();
-                // for triplet in (*triplets.lock().unwrap()).iter() {
-                //     file.write_fmt(format_args!("{}-{}-{}\n", triplet.a, triplet.b, triplet.c))
-                //         .unwrap();
-                // }
-            }),
-            "load" => run_if_paused(&paused, || {
+            }
+            "load" if *paused.read().unwrap() => {
                 // try to load the file, and error if it fails
                 let arg = input
                     .split_ascii_whitespace()
@@ -152,11 +121,13 @@ pub fn run(threads: Option<u32>, strict: bool) {
 
                 load(arg, &current, &triplets, &print, &print_init).unwrap_or_else(|err| {
                     println!("Load error: {}.\nFile possibly corrupted.", err);
-                })
-            }),
-            "help" => println!("{}", intro::HELP),
+                });
+            }
+            // show an error instead of silently denying
+            "exit" | "save" | "load" => println!("{}", text::RUNNING_ERROR),
+            "help" => println!("{}", text::HELP),
             "" => (), // don't show an error if they don't input anything
-            _ => println!("{}", intro::INPUT_ERROR),
+            _ => println!("{}", text::INPUT_ERROR),
         }
     }
 
@@ -171,18 +142,6 @@ pub fn run(threads: Option<u32>, strict: bool) {
 
     // loop for input
     // if exit, close threads
-}
-
-/// TODO: find a better way to do this
-fn run_if_paused<F>(paused: &Arc<RwLock<bool>>, f: F)
-where
-    F: FnOnce(),
-{
-    if *paused.read().unwrap() {
-        f();
-    } else {
-        println!("{}", intro::RUNNING_ERROR);
-    }
 }
 
 fn save(
@@ -240,7 +199,7 @@ fn load(
 
     println!("Reading {}...", arg);
     let content = fs::read_to_string(arg)?;
-    println!("File opened.\nVerifying contents...");
+    println!("Loading contents...");
     let mut content = content.lines();
 
     *current.lock().unwrap() = content.next().ok_or("File corrupted")?.parse()?;
