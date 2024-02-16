@@ -142,6 +142,7 @@ pub fn run(threads: Option<u32>, strict: bool) {
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
+                
                 load(arg, &current, &triplets, &print, &print_init).unwrap_or_else(|err| {
                     println!("Load error, file possibly corrupted.\nError type: {}", err);
                 })
@@ -194,7 +195,9 @@ fn load(
     //     }
     // };
 
+    println!("Reading {}...", arg);
     let content = fs::read_to_string(arg)?;
+    println!("File opened.\nVerifying contents...");
     let mut content = content.lines();
     
     *current.lock().unwrap() = content.next().ok_or("File corrupted")?.parse()?;
@@ -214,9 +217,10 @@ fn load(
 
         triplets.push(Triplet::new(nums[0], nums[1], nums[2]));
     }
-
     *init.write().unwrap() = Some(triplets.len());
     *print.write().unwrap() = print_state;
+
+    println!("Successfully loaded from {}.", arg);
 
     Ok(())
 }
