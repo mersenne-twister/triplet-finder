@@ -1,5 +1,8 @@
 use {
-    crate::{find::{Find, Triplet}, input, text, Stop},
+    crate::{
+        find::{Find, Triplet},
+        input, text, Stop,
+    },
     std::{
         error::Error,
         fs::{self, File},
@@ -12,7 +15,7 @@ pub fn save(
     arg: &str,
     num_threads: u32,
     print: &Arc<RwLock<bool>>,
-    find: Arc<Find>
+    find: &Arc<Find>,
 ) -> Result<(), Box<dyn Error>> {
     println!("Opening file...");
     let mut file = File::create(arg)?;
@@ -47,7 +50,7 @@ pub fn load(
     arg: &str,
     print: &Arc<RwLock<bool>>,
     init: &Arc<RwLock<Option<usize>>>,
-    find: Arc<Find>
+    find: &Arc<Find>,
 ) -> Result<(), Box<dyn Error>> {
     println!("Reading {}...", arg);
     let content = fs::read_to_string(arg)?;
@@ -126,13 +129,7 @@ pub fn input(
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                input::save(
-                    arg,
-                    num_threads,
-                    &print,
-                    find
-                )
-                .unwrap_or_else(|err| {
+                input::save(arg, num_threads, &print, &find).unwrap_or_else(|err| {
                     println!("Save error: {}.", arg);
                 })
             }
@@ -143,7 +140,7 @@ pub fn input(
                     .nth(1)
                     .unwrap_or("triplets.txt");
 
-                input::load(arg,  &print, &print_init, find).unwrap_or_else(|err| {
+                input::load(arg, &print, &print_init, &find).unwrap_or_else(|err| {
                     println!("Load error: {}.\nFile possibly corrupted.", err);
                 });
             }

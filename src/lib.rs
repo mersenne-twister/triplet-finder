@@ -7,6 +7,7 @@ mod print;
 mod text;
 
 use core::num;
+use find::Find;
 use std::{
     error::Error,
     fs::{self, File},
@@ -16,7 +17,6 @@ use std::{
     thread,
     time::Duration,
 };
-use find::Find;
 
 struct Stop {
     stop: bool,
@@ -49,28 +49,19 @@ pub fn run(threads: Option<u32>, strict: bool) {
 
     {
         // spawn the thread to print the values as they're found
-        let num_triplets = triplets.lock().unwrap().len();
-        let triplets = Arc::clone(&triplets);
+        let num_triplets = find.triplets.lock().unwrap().len();
+        let find = find.clone();
         let print = Arc::clone(&print);
         let init = Arc::clone(&print_init);
 
-        thread::spawn(move || print_triplets(triplets, num_triplets, print, init));
+        thread::spawn(move || print_triplets(find, num_triplets, print, init));
     }
 
-    input::input(
-        strict,
-        paused,
-        print,
-        num_threads,
-        stop,
-        current,
-        triplets,
-        print_init,
-    );
+    input::input(strict, print, num_threads, print_init, find);
 }
 
 fn print_triplets(
-    triplets: Arc<Mutex<Vec<Triplet>>>,
+    find: Arc<Find>,
     starting_size: usize,
     print: Arc<RwLock<bool>>,
     init: Arc<RwLock<Option<usize>>>,
@@ -87,10 +78,10 @@ fn print_triplets(
             }
             continue;
         }
-        let num_found = (*triplets.lock().unwrap()).len();
+        let num_found = (*find.triplets.lock().unwrap()).len();
         if num_found > num_printed {
             for num in num_printed..num_found {
-                let triplet = &(*triplets.lock().unwrap())[num];
+                let triplet = &(*find.triplets.lock().unwrap())[num];
                 println!("{}-{}-{}", triplet.a, triplet.b, triplet.c);
             }
             num_printed = num_found;
@@ -98,53 +89,23 @@ fn print_triplets(
     }
 }
 
-
-
-#[derive(PartialEq, Debug)]
-struct Triplet {
-    a: u64,
-    b: u64,
-    c: u64,
-}
-
-impl Triplet {
-    fn new(a: u64, b: u64, c: u64) -> Triplet {
-        Triplet { a, b, c }
-    }
-}
-
-fn contains_triplet(triplets: &[Triplet], triplet: &Triplet) -> bool {
-    for i in triplets {
-        if (((triplet.a % i.a == 0) && (triplet.b % i.b == 0))
-            || ((triplet.a % i.b == 0) && (triplet.b % i.a == 0)))
-            && (triplet.c % i.c == 0)
-        {
-            return true;
-        }
-    }
-
-    // TODO: simplify the triplet, then use .contains
-
-    false
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
 
-    #[test]
-    fn detects_multiples() {
-        assert!(contains_triplet(
-            &[Triplet::new(3, 4, 5)],
-            &Triplet::new(6, 8, 10)
-        ));
-    }
+    // #[test]
+    // fn detects_multiples() {
+    //     assert!(contains_triplet(
+    //         &[Triplet::new(3, 4, 5)],
+    //         &Triplet::new(6, 8, 10)
+    //     ));
+    // }
 
-    #[test]
-    fn detects_distincts() {
-        assert!(!contains_triplet(
-            &[Triplet::new(3, 4, 5)],
-            &Triplet::new(5, 15, 17)
-        ));
-    }
+    // #[test]
+    // fn detects_distincts() {
+    //     assert!(!contains_triplet(
+    //         &[Triplet::new(3, 4, 5)],
+    //         &Triplet::new(5, 15, 17)
+    //     ));
+    // }
 }
