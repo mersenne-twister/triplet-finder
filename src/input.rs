@@ -1,7 +1,7 @@
 use {
     crate::{
-        find::{Find, Triplet},
-        input, text, Stop,
+        find::{Find, Stop, Triplet},
+        input, text,
     },
     std::{
         error::Error,
@@ -10,6 +10,75 @@ use {
         sync::{Arc, Mutex, RwLock},
     },
 };
+
+pub fn input(
+    strict: bool,
+    print: Arc<RwLock<bool>>,
+    num_threads: u32,
+    print_init: Arc<RwLock<Option<usize>>>,
+    find: Arc<Find>,
+) {
+    let mut input = String::new();
+    loop {
+        input.clear();
+        io::stdin().read_line(&mut input).unwrap();
+
+        if strict {
+            input = input.to_ascii_lowercase();
+        }
+
+        match input.trim().split_ascii_whitespace().next().unwrap_or("") {
+            "start" => {
+                *find.paused.write().unwrap() = false;
+                println!("Program executing.")
+            }
+            "stop" => {
+                *find.paused.write().unwrap() = true;
+                println!("Program suspended.")
+            }
+            "print" => {
+                let arg = input
+                    .split_ascii_whitespace()
+                    .nth(1)
+                    .unwrap_or("")
+                    .parse::<bool>();
+                if let Ok(arg) = arg {
+                    *print.write().unwrap() = arg;
+                    println!("Printing {}.", if arg { "enabled" } else { "disabled" })
+                } else {
+                    println!("{}", text::PRINT_ERROR);
+                }
+            }
+            "exit" if *find.paused.read().unwrap() => return,
+            "save" if *find.paused.read().unwrap() => {
+                let arg = input
+                    .split_ascii_whitespace()
+                    .nth(1)
+                    .unwrap_or("triplets.txt");
+
+                input::save(arg, num_threads, &print, &find).unwrap_or_else(|err| {
+                    println!("Save error: {}.", arg);
+                })
+            }
+            "load" if *find.paused.read().unwrap() => {
+                // try to load the file, and error if it fails
+                let arg = input
+                    .split_ascii_whitespace()
+                    .nth(1)
+                    .unwrap_or("triplets.txt");
+
+                input::load(arg, &print, &print_init, &find).unwrap_or_else(|err| {
+                    println!("Load error: {}.\nFile possibly corrupted.", err);
+                });
+            }
+            // show an error instead of silently denying
+            "exit" | "save" | "load" => println!("{}", text::RUNNING_ERROR),
+            "help" => println!("{}", text::HELP),
+            "" => (), // don't show an error if they don't input anything
+            _ => println!("{}", text::INPUT_ERROR),
+        }
+    }
+}
 
 pub fn save(
     arg: &str,
@@ -81,74 +150,4 @@ pub fn load(
     *print.write().unwrap() = print_state;
 
     Ok(())
-}
-
-/// TODO: move input into here
-pub fn input(
-    strict: bool,
-    print: Arc<RwLock<bool>>,
-    num_threads: u32,
-    print_init: Arc<RwLock<Option<usize>>>,
-    find: Arc<Find>,
-) {
-    let mut input = String::new();
-    loop {
-        input.clear();
-        io::stdin().read_line(&mut input).unwrap();
-
-        if strict {
-            input = input.to_ascii_lowercase();
-        }
-
-        match input.trim().split_ascii_whitespace().next().unwrap_or("") {
-            "start" => {
-                *find.paused.write().unwrap() = false;
-                println!("Program executing.")
-            }
-            "stop" => {
-                *find.paused.write().unwrap() = true;
-                println!("Program suspended.")
-            }
-            "print" => {
-                let arg = input
-                    .split_ascii_whitespace()
-                    .nth(1)
-                    .unwrap_or("")
-                    .parse::<bool>();
-                if let Ok(arg) = arg {
-                    *print.write().unwrap() = arg;
-                    println!("Printing {}.", if arg { "enabled" } else { "disabled" })
-                } else {
-                    println!("{}", text::PRINT_ERROR);
-                }
-            }
-            "exit" if *find.paused.read().unwrap() => return,
-            "save" if *find.paused.read().unwrap() => {
-                let arg = input
-                    .split_ascii_whitespace()
-                    .nth(1)
-                    .unwrap_or("triplets.txt");
-
-                input::save(arg, num_threads, &print, &find).unwrap_or_else(|err| {
-                    println!("Save error: {}.", arg);
-                })
-            }
-            "load" if *find.paused.read().unwrap() => {
-                // try to load the file, and error if it fails
-                let arg = input
-                    .split_ascii_whitespace()
-                    .nth(1)
-                    .unwrap_or("triplets.txt");
-
-                input::load(arg, &print, &print_init, &find).unwrap_or_else(|err| {
-                    println!("Load error: {}.\nFile possibly corrupted.", err);
-                });
-            }
-            // show an error instead of silently denying
-            "exit" | "save" | "load" => println!("{}", text::RUNNING_ERROR),
-            "help" => println!("{}", text::HELP),
-            "" => (), // don't show an error if they don't input anything
-            _ => println!("{}", text::INPUT_ERROR),
-        }
-    }
 }
