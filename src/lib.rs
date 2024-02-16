@@ -20,15 +20,15 @@ use {
     },
 };
 
+use crate::print::Print;
+
 pub fn run(threads: Option<u32>, strict: bool) {
     println!("{}\n\n{}", text::MESSAGE, text::HELP);
 
     let num_threads = if let Some(num) = threads { num } else { 8 };
 
     let find = Find::new();
-
-    let print = Arc::new(RwLock::new(true));
-    let print_init = Arc::new(RwLock::new(None));
+    let print = Print::new();
 
     for _ in 0..num_threads {
         let find = Arc::clone(&find);
@@ -38,15 +38,13 @@ pub fn run(threads: Option<u32>, strict: bool) {
 
     {
         // spawn the thread to print the values as they're found
-        let num_triplets = find.triplets.lock().unwrap().len();
-        let find = find.clone();
         let print = Arc::clone(&print);
-        let init = Arc::clone(&print_init);
+        let find = Arc::clone(&find);
 
-        thread::spawn(move || print::print_triplets(find, num_triplets, print, init));
+        thread::spawn(move || print.print(find));
     }
 
-    input::input(strict, print, num_threads, print_init, find);
+    input::input(find, print, strict, num_threads);
 }
 
 #[cfg(test)]
