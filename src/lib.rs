@@ -26,7 +26,6 @@ pub fn run(threads: Option<u32>, strict: bool) {
     let num_threads = if let Some(num) = threads { num } else { 8 };
 
     let find = Find::new();
-
     let print = Print::new();
 
     for _ in 0..num_threads {
