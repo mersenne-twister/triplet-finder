@@ -19,7 +19,7 @@ pub fn input(find: Arc<Find>, print: Arc<Print>, strict: bool, num_threads: u32)
         input.clear();
         io::stdin().read_line(&mut input).unwrap();
 
-        if strict {
+        if !strict {
             input = input.to_ascii_lowercase();
         }
 
