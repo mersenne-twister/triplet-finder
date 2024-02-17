@@ -1,6 +1,7 @@
 // temporary, to make it easier to see the important errors
 #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 
+pub mod args;
 mod find;
 mod input;
 mod print;
@@ -22,10 +23,8 @@ use {
 
 use crate::print::Print;
 
-pub fn run(threads: Option<u32>, strict: bool) {
+pub fn run(num_threads: u32, strict: bool) {
     println!("{}\n\n{}", text::MESSAGE, text::HELP);
-
-    let num_threads = if let Some(num) = threads { num } else { 8 };
 
     let find = Find::new();
     let print = Print::new();
