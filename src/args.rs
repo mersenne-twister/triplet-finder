@@ -5,7 +5,7 @@ use clap::{Parser, ValueEnum};
 #[command(author, version, about, long_about = None)]
 pub struct Args {
     /// Specify a custom number of threads (tip: use your core count)
-    #[arg(short = 't', long, default_value_t = 8)]
+    #[arg(short = 't', long, default_value_t = 14)]
     pub threads: u32,
 
     /// Make commands case sensitive. Provides a miniscule performance increase.
