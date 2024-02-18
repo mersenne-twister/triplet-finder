@@ -16,7 +16,7 @@ impl Find {
         })
     }
 
-    pub fn find(&self) {
+    pub fn find(&self) -> ! {
         loop {
             let c = {
                 let mut current = self.current.lock().unwrap();

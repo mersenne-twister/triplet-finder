@@ -13,7 +13,7 @@ impl Print {
         })
     }
 
-    pub fn print(&self, find: Arc<Find>) {
+    pub fn print(&self, find: Arc<Find>) -> ! {
         let mut num_printed = 0;
         loop {
             if !*self.print.read().unwrap() {
