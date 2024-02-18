@@ -1,5 +1,5 @@
-use triplet_finder::args::Args;
 use clap::Parser;
+use triplet_finder::args::Args;
 
 fn main() {
     // handle args

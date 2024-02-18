@@ -48,11 +48,3 @@ Cannot perform this task while program running.
 To suspend execution, enter `stop`.";
 
 pub const PRINT_ERROR: &str = "Invalid arguement. Syntax of command is `print [bool]`.";
-
-pub const SAVE_ERROR: &str = "\
-Invalid filename. Syntax of command is `save [filename]`,
-subject to your os's whims.";
-
-pub const LOAD_ERROR: &str = "\
-Invalid filename. Syntax of command is `load [filename]`,
-subject to your os's whims.";

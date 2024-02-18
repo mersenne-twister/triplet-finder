@@ -1,4 +1,4 @@
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 
 /// Application to concurrently search for Pythagorean Triplets
 #[derive(Parser, Debug)]

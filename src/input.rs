@@ -1,6 +1,6 @@
 use {
     crate::{
-        find::{Find, Stop, Triplet},
+        find::{Find, Triplet},
         input,
         print::Print,
         text,
@@ -9,7 +9,7 @@ use {
         error::Error,
         fs::{self, File},
         io::{self, Write},
-        sync::{Arc, Mutex, RwLock},
+        sync::Arc,
     },
 };
 
@@ -53,7 +53,7 @@ pub fn input(find: Arc<Find>, print: Arc<Print>, strict: bool, num_threads: u32)
                     .unwrap_or("triplets.txt");
 
                 input::save(&find, &print, arg, num_threads).unwrap_or_else(|err| {
-                    println!("Save error: {}.", arg);
+                    println!("Save error: {}.", err);
                 })
             }
             "load" if *find.paused.read().unwrap() => {

@@ -1,5 +1,5 @@
 // temporary, to make it easier to see the important errors
-#![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
+// #![allow(dead_code, unused_variables, unused_imports, unused_assignments)]
 
 pub mod args;
 mod find;
@@ -8,17 +8,8 @@ mod print;
 mod text;
 
 use {
-    core::num,
     find::Find,
-    std::{
-        error::Error,
-        fs::{self, File},
-        hint::spin_loop,
-        io::{self, Write},
-        sync::{Arc, Mutex, RwLock},
-        thread,
-        time::Duration,
-    },
+    std::{sync::Arc, thread},
 };
 
 use crate::print::Print;
@@ -48,7 +39,7 @@ pub fn run(num_threads: u32, strict: bool) {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    // use super::*;
 
     // #[test]
     // fn detects_multiples() {
