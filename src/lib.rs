@@ -20,7 +20,7 @@ pub fn run(num_threads: u32, strict: bool) {
     let find = Find::new();
     let print = Print::new();
 
-    for _ in 0..num_threads {
+    for _ in 0..(num_threads - 2) {
         let find = Arc::clone(&find);
 
         thread::spawn(move || find.find());
