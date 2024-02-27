@@ -4,8 +4,8 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    /// Specify a custom number of threads (tip: use your core count)
-    #[arg(short = 't', long, default_value_t = 14)]
+    /// Specify a custom number of threads (tip: use your logical core count)
+    #[arg(short = 't', long, default_value_t = 16)]
     pub threads: u32,
 
     /// Make commands case sensitive. Provides a miniscule performance increase.
